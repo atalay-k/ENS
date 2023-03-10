@@ -37,6 +37,7 @@ add_pie(Cinsiyet, labels = ~`Cinsiyet`, values = ~`toplam`,
          marker = list(colors = c("1" =  "blue",
                                  "2" = "red"))) %>% 
         layout(title = 'Cinsiyet Dağılımı')
+
 ABD <- basvuru %>%   group_by(Anabilim_Dali) %>%
   summarise(Toplam = n()) %>%
   mutate(Yüzde = round(Toplam/nrow(basvuru),3)) %>% 
@@ -60,8 +61,11 @@ p3 <-  plot_ly(Aday_Uni[1:10,]) %>%
 Basvuru_duzey <- basvuru %>% group_by(Ogretim_Duzeyi) %>% summarise(toplam = n(), .groups = 'drop') 
 
 p4 <- plot_ly(Basvuru_duzey) %>%
+
  add_pie(Basvuru_duzey, labels = ~`Ogretim_Duzeyi`, values = ~`toplam`,type = 'pie', hole = 0.5) %>% 
             layout(title = 'Öğretim Düzeyi Dağılımı')
+
+ add_pie(Basvuru_duzey, labels = ~`Ogretim_Duzeyi`, values = ~`toplam`,type = 'pie', hole = 0.5) 
 
 
 
@@ -83,14 +87,23 @@ library(webr)
                 explodeDonut=TRUE,selected=c(1,3),
                 ratioByGroup=FALSE)  +theme(panel.border = element_blank())
   
+
 Kayitli <- basvuru %>%
    filter(Kayit_Oldu_Mu=="Kaydoldu")
 
 
+Kayıtlı <- basvuru %>%
+   filter(Kayit_Oldu_Mu=="Kaydoldu")
+
+Kayıtlı_1 <- Kayıtlı %>% group_by(Anabilim_Dali)
+
 ```
 
 
+
 Bu rapor, Hacettepe Üniversitesi Eğitim Bilimleri Enstitüsü tarafından 2023 yılında hazırlanmıştır. Elinizdeki bu raporun temel amacı, 2022-2023 öğretim yılındaki aday  ve kayıtlı öğrencilerin profilini ortaya koymaktır. Rapor, dijital veri tabanından elde edilen yaklaşık 1408 kişinin verinin analizi ile oluşturulmuştur.
+
+Bu rapor, Hacettepe Üniversitesi Eğitim Bilimleri Enstitüsü tarafından 2023 yılında hazırlanmıştır. Elinizdeki bu raporun temel amacı, 2022-2023 öğrencilerin profilini ortaya koymaktır. Rapor, dijital veri tabanından elde edilen yaklaşık 1408 kişinin verinin analizi ile oluşturulmuştur.
 
 ## Aday Öğrenci Bilgileri
 
@@ -102,9 +115,17 @@ Tablo 1. Aday Öğrenci Uyrukları
 Uyruk %>% kable()
 ```
 
+
 Enstitümüze başvuran 1408 aday öğrencilerin cinsiyet, başvurdukları düzey, ana bilim dalı ve mezun oldukları üniversite dağılımları şekildeki gibidir. Aday öğrencilerin %72,3’ü kadın, %27,7’si erkektir. Öğrencilerin %34,2'si yüksek lisans , %21,7'si doktora ,%16,7'sı tezsiz yüksek lisans, ,%26,3'ü uzaktan tezsiz yüksek lisans ve %1,07'si bütünleşik doktora programına başvurmuştur
 
 Aday öğrencilerin 100'den fazla farklı değişik üniversiteden mezun oldukları bulunmuştur. Öğrencilerin %33,5'i Hacettepe Üniversitesinin değişik bölümlerinden mezun olduğu, bu üniversiteyi sırasıyla Gazi Üniversitesi, Ankara Üniversitesi, Orta Doğu Teknik Üniversitesi,  Anadolu Üniversitesi'nin izlediği tespit edilmiştir. %50,6'ile Eğitim Bilimleri Ana Bilim dalı en çok başvuru yapılan anabilim dalı oludğu görülmektedir.
+
+Enstitüye ,başvuran 1408 aday öğrencilerin cinsiyet, başvurdukları düzey, ana bilim dalı ve mezun oldukları üniversite dağılımları şekildeki gibidir. 
+<br>
+
+<!-- Öğrencilerin %45,1'i yüksek lisans , %25,9'u doktora ,%14,6'sı tezsiz yüksek lisans, ,%13,7'si uzaktan tezsiz yüksek lisans ve %0,76'sı bütünleşik doktora programındadır. -->
+
+<!-- Öğrencilerin 100'den fazla farklı değişik üniversiteden mezun oldukları bulunmuştur. Öğrencilerin %50,4'ü Hacettepe Üniversitesinin değişik bölümlerinden mezun olduğu, bu üniversiteyi sırasıyla Orta Doğu Teknik Üniversitesi, Gazi Üniversitesi, Anadolu Üniversitesi, Ankara Üniversitesi, Başkent Üniversitesi ve Dokuz Eylül Üniversitesi'nin izlediği tespit edilmiştir. -->
 
 ```{r echo=FALSE,message=FALSE, warning=FALSE}
 
@@ -112,23 +133,26 @@ library(htmltools)
 
  browsable(div(
   style = "display: flex; flex-wrap: wrap; justify-content: center",
-  div(p1, style = "width: 40%"),
-    div(p4, style = "width: 50%"),
 
+  div(p1, style = "width: 40%"),
+
+  div(p1, style = "width: 50%"),
+    div(p4, style = "width: 50%"),
 ))
  
  browsable(div(
   style = "display: flex; flex-wrap: wrap; justify-content: center",
+
     div(p2, style = "width: 60%"),
   div(p3, style = "width: 40%")
 ))
- 
  
  
 ```
 
 Bunun yanında öğrencilerin kazandıkları kayıt hakkı ve kayıt oma durumu da görselde yer almaktadır. 
 ![](KAYIT.PNG)
+
 
 
 Aday öğrencilerin başvurdukları anabilim dalı ve öğretim düzeyine göre transkript, ALES  ve yabancı dil puanları dağılımları aşağıdaki gibidir. Öğrenciler başvurları sırasından YDS, E-YDS,YOKDIL, KPDS, TOEFL ve IELTS olmak üzere farklı sınav puanlarını kullanmışlardır. En sık kullanılan üç puan türü sırası YOKDIL, YDS ve E-YDS'dir.
@@ -268,6 +292,9 @@ Kayitli_Uni <- Kayitli %>%  group_by(Anabilim_Dali, Ogretim_Duzeyi, Mezun_Uni) %
 ```
 
 
+
+## Kayıtlı Öğrenciler
+
 ## Ana Bilim Dalları {.tabset}
 
 ```{r echo=FALSE,message=FALSE, warning=FALSE}
@@ -383,16 +410,3 @@ browsable(div(
 ### Yabancı Diller Eğitimi Ana Bilim Dalı
 
 ### Yükseköğretimin Yönetimi Ana Bilim Dalı
-
-
-<!-- . -->
-
-
-
-
-
-
-
-
-
-
