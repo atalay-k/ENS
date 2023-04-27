@@ -3,8 +3,8 @@ title: "Eğitim Bilimleri Enstitüsü"
 subtitle: Öğrenci Profil Raporu
 output:
   html_document:
-    toc: true
-    toc_float: true
+    toc: yes
+    toc_float: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -1431,6 +1431,8 @@ Hacettepe Üniversitesi Eğitim Bilimleri Enstitüsü adına hazırlanan bu rapo
 
 İlgili ankette öğrencilerin eğitimine devam ettiği ana bilim dalı, program türü ve düzeyine ilişkin bilgilerin yanı sıra aşağıda yer alan 16 adet beşli likert tipinde ve 3 adet açık uçlu madde ile derslere ilişkin görüşleri alınmıştır.
 
+<<<<<<< HEAD
+=======
 ```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 # Veri Setinin Hazırlanması
 
@@ -1497,6 +1499,7 @@ anket.6 <- anket.6 %>%
       "Öğrenci.olarak.eğitim.gördüğünüz.programı.seçiniz"
   )
 ```
+>>>>>>> decbafe05c12331d066c93af2eb1e62f92f7eebd
 
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
@@ -1552,6 +1555,13 @@ anket.7 <- anket.6 %>%
 -   Ölçekte yer alan maddeler aşağıda sunulmuştur. Bu maddelerden 1-16. sırada yer alanlar beşli likert tipinde olup son üç sırada yer alan 17-19. maddeler ise açık uçlu olarak hazırlanmıştır.
 
 ----
+<<<<<<< HEAD
+
+```{r echo=FALSE, message=FALSE, warning=FALSE,comment=""}
+for (i in 5:23) {
+  cat(i-4, ".", names(anket.7[,i]), sep = "", "\n")
+}
+=======
 1. Ders sorumlusu derse hazırlıklı geldi.
 2. Ders ilgi çekici şekilde işlendi.
 3. Ders açık ve anlaşılır bir şekilde işlendi.
@@ -1578,6 +1588,7 @@ anket.7 <- anket.6 %>%
 # for (i in 5:23) {
 #   cat(i-4, ".", names(anket.7[,i]), sep = "", "\n")
 # }
+>>>>>>> decbafe05c12331d066c93af2eb1e62f92f7eebd
 ```
 
 ## Anket Sonuçları
