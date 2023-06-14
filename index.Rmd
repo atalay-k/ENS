@@ -1,3 +1,1747 @@
+<<<<<<< HEAD
+---
+title: "Eğitim Bilimleri Enstitüsü"
+subtitle: Öğrenci Profil Raporu
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(digits=2)
+
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(readxl)
+library(plotly)
+library(dplyr)
+library(ggplot2)
+
+library(knitr)
+
+basvuru  <- read_excel("basvuru_v6.xlsx")
+basvuru  <-  basvuru %>% filter(YIL == "2022-2023")
+
+
+Uyruk <- basvuru %>%
+  group_by(Uyruk) %>%
+  summarise(Toplam = n()) %>%
+  mutate(Yuzde = (round(Toplam/nrow(basvuru),3)*100)) %>% arrange(-Toplam)
+
+Cinsiyet <- basvuru %>% group_by(Cinsiyet) %>% 
+  summarise(toplam = n(), .groups = 'drop')
+
+p1 <- plot_ly(Cinsiyet) %>%
+add_pie(Cinsiyet, labels = ~`Cinsiyet`, values = ~`toplam`,
+          type = 'pie', hole = 0.5,
+         marker = list(colors = c("1" =  "blue",
+                                 "2" = "red"))) %>% 
+        layout(title = 'Cinsiyet Dağılımı',
+               legend = list(orientation = 'h'))
+
+ABD <- basvuru %>%   group_by(Anabilim_Dali) %>%
+  summarise(Toplam = n()) %>%
+  mutate(Yuzde = round(Toplam/nrow(basvuru),3)) %>% 
+  arrange(-Toplam)
+
+p2 <- plot_ly(ABD) %>%
+add_pie(ABD, labels = ~`Anabilim_Dali`, values = ~`Toplam`,
+          type = 'pie', hole = 0.5) %>% 
+          layout(title = 'Ana Bilim Dalı Dağılımı',
+               legend = list(orientation = 'h'))  
+
+Aday_Uni <- basvuru %>% 
+group_by(Mezun_Uni) %>% 
+  summarise(toplam = n(), .groups = 'drop') %>% arrange(-toplam)
+
+p3 <-  plot_ly(Aday_Uni[1:10,]) %>% 
+ add_pie(Aday_Uni[1:10,], labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'Mezun Olunan Üniversite Dağılımı',
+               legend = list(orientation = 'h'))
+
+# theme(legend.position="bottom", legend.box = "horizontal")
+
+
+Basvuru_duzey <- basvuru %>% group_by(Ogretim_Duzeyi) %>% summarise(toplam = n(), .groups = 'drop') 
+
+p4 <- plot_ly(Basvuru_duzey) %>%
+
+ add_pie(Basvuru_duzey, labels = ~`Ogretim_Duzeyi`, values = ~`toplam`,type = 'pie', hole = 0.5) %>% 
+            layout(title = 'Öğretim Düzeyi Dağılımı',
+               legend = list(orientation = 'h'))
+
+
+
+
+Kazanan <- basvuru %>%
+  filter(Kayit_Hakki!="Kayıt Hakkı Kazanamadı")
+
+  Kayit <- Kazanan %>%
+   group_by(Kayit_Hakki,Kayit_Oldu_Mu) %>%
+   summarise(toplam = n(), .groups = 'drop')  %>%
+   rename(KAYIT_HAKKI = Kayit_Hakki) %>%
+   mutate(KAYIT_HAKKI=recode(KAYIT_HAKKI,
+        `Kesin Kayıt Hakkı Kazandı`="Kesin Kayıt",
+  `Yedek Kayıt Hakkı Kazandı`="Yedek Kayıt",)) %>%
+  rename(k2 = Kayit_Oldu_Mu)
+
+# library(webr)
+#  PieDonut(Kayit, aes(KAYIT_HAKKI,k2,count=toplam ),
+#                explode=1.2,
+#                 explodeDonut=TRUE,selected=c(1,3),
+#                 ratioByGroup=FALSE)  +theme(panel.border = element_blank())
+  
+
+Kayitli <- basvuru %>%
+   filter(Kayit_Oldu_Mu=="Kaydoldu")
+
+
+Kayıtlı <- basvuru %>%
+   filter(Kayit_Oldu_Mu=="Kaydoldu")
+
+Kayıtlı_1 <- Kayıtlı %>% group_by(Anabilim_Dali)
+
+```
+
+```{r echo=FALSE, include=FALSE,message=FALSE, warning=FALSE} 
+
+Transkript <- basvuru %>% mutate(Transkript_Puan = as.numeric(Transkript_Puan))%>% 
+ filter(Transkript_Puan>=4) 
+
+Transkript_1 <- Transkript %>% group_by(Anabilim_Dali,Ogretim_Duzeyi) %>% 
+  summarize(Transkript= mean(Transkript_Puan,na.rm=TRUE)) 
+
+library(tidyr)
+
+Transkript_2 <- Transkript_1 %>% spread(Ogretim_Duzeyi,Transkript)
+
+ # plot_ly(Transkript_1,  y=~Transkript, x=~Anabilim_Dali,  
+ # 
+ #       type = 'bar') %>%  
+ # 
+ #     layout(yaxis = list(title = 'Mezuniyet Derecesi'), 
+ # 
+ #         yaxis = list(title = 'Öğretim Dönemleri'),
+ # 
+ #                barmode = 'stack') 
+ 
+ 
+p5 <- plot_ly(Transkript_2, y = ~YL, x = ~Anabilim_Dali, type = 'bar', name = 'YL')%>% 
+  add_trace(y = ~Doktora, name = 'Doktora') %>% 
+    add_trace(y = ~`Tezsiz YL`, name = 'Tezsiz YL') %>%
+  add_trace(y = ~`Bütünleşik Doktora`, name = 'Bütünleşik Doktora') %>%
+    add_trace(y = ~`Uzaktan Tezsiz YL`, name = 'Uzaktan Tezsiz YL') %>%
+  layout(yaxis = list(title = 'Transkript Not'), 
+         xaxis = list(title = 'Ana Bilim Dalları'),barmode = 'group')
+ 
+```
+
+```{r echo=FALSE,message=FALSE, warning=FALSE, include=FALSE} 
+ALES <- basvuru %>% mutate(ALES_Puan = as.numeric(ALES_Puan)) %>% 
+ filter(ALES_Puan<= 100 & ALES_Puan > 0 )
+
+ALES_1 <- ALES %>% group_by(Anabilim_Dali,Ogretim_Duzeyi) %>% 
+  summarize(ALES_Puan= mean(ALES_Puan,na.rm=TRUE),.groups = 'drop') 
+  # filter(!Ogretim_Duzeyi=="Uzaktan Tezsiz YL")
+
+library(tidyr)
+
+ALES_2 <- ALES_1 %>% spread(Ogretim_Duzeyi,ALES_Puan)
+
+ 
+p6 <- plot_ly(ALES_2, y = ~YL, x = ~Anabilim_Dali, type = 'bar', name = 'YL')%>% 
+  add_trace(y = ~Doktora, name = 'Doktora') %>% 
+    add_trace(y = ~`Tezsiz YL`, name = 'Tezsiz YL') %>%
+  add_trace(y = ~`Bütünleşik Doktora`, name = 'Bütünleşik Doktora') %>%
+  layout(yaxis = list(title = 'ALES Puan'), 
+         xaxis = list(title = 'Ana Bilim Dalları'),barmode = 'group')
+```
+
+
+
+```{r echo=FALSE,message=FALSE, warning=FALSE, include=FALSE} 
+
+ DIL <- basvuru %>%   filter(Dil_Tur %in%  c("YOKDIL", "YDS" , "EYDS")) %>% 
+  mutate(Dil_Puan = as.numeric(Dil_Puan)) 
+
+# %>%
+
+DIL_1<-  DIL %>% group_by(Anabilim_Dali,Ogretim_Duzeyi) %>% 
+  summarize(Dil_Puan= mean(Dil_Puan,na.rm=TRUE),.groups = 'drop') 
+            
+ 
+ DIL_2 <- DIL_1 %>% spread(Ogretim_Duzeyi,Dil_Puan)
+
+
+ 
+p7 <- plot_ly(DIL_2, y = ~YL, x = ~Anabilim_Dali, type = 'bar', name = 'YL')%>% 
+  add_trace(y = ~Doktora, name = 'Doktora') %>% 
+    add_trace(y = ~`Tezsiz YL`, name = 'Tezsiz YL') %>%
+  add_trace(y = ~`Bütünleşik Doktora`, name = 'Bütünleşik Doktora') %>%
+  layout(yaxis = list(title = 'Yabancı Dil Puan'), 
+         xaxis = list(title = 'Ana Bilim Dalları'),barmode = 'group')
+ 
+```
+
+
+
+
+
+Bu rapor, Hacettepe Üniversitesi Eğitim Bilimleri Enstitüsü tarafından 2023 yılında hazırlanmıştır. Rapor üç ana bölümden oluşmaktadır. Raporun ilk bölümünde aday öğrenci ve kayıtlı öğrenci profili ortaya koymak amaçlanmıştır. İkinci bölümde ise öğretim süreci ile ilgili göstergelere yer verilmiştir. Bu bölüm 2022-2023 eğitim öğretim yılının güz döneminde eğitimine devam etmekte olan öğrencilere çevrimiçi olarak uygulanan ders değerlendirme anketinin sonuçlarını içermektedir.
+Üçüncü bölümde öğretim süreci çıktıları ele alınmıştır.
+
+# **Öğrenci Profil Raporu** 
+
+Raporun bu bölümün  temel amacı, 2022-2023 öğrencilerin profilini ortaya koymaktır. Rapor, dijital veri tabanından elde edilen yaklaşık 1408 kişiye ait verinin analizi ile oluşturulmuştur.
+
+Bu bölümde aday öğrencilerin uyruk, cinsiyet, başvurdukları öğretim düzeyi, başvurulan anabilimdalı, mezun olunan üniversite, başvurda kullandıkları mezuniyet notu, ALES ve yabancı dil puan dağılımlarına yer verilmiştir.
+
+## Aday Öğrenci Bilgileri
+
+Enstitümüze lisansüstü eğitim için başvuran öğrencilerin %99'u Türkiye Cumhuriyeti vatandaşıdır. Enstitümüze başvuruda bulunan öğrencilerin uyrukları Tablo 1'de yer almaktadır.
+
+Tablo 1. Aday Öğrenci Uyrukları
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+Uyruk %>% kable()
+```
+
+
+Enstitümüze başvuran 1408 aday öğrencinin cinsiyet, başvurdukları düzey, ana bilim dalı ve mezun oldukları üniversite dağılımları şekildeki gibidir. 
+
+<!-- Öğrencilerin %45,1'i yüksek lisans , %25,9'u doktora ,%14,6'sı tezsiz yüksek lisans, ,%13,7'si uzaktan tezsiz yüksek lisans ve %0,76'sı bütünleşik doktora programındadır. -->
+
+<!-- Öğrencilerin 100'den fazla farklı değişik üniversiteden mezun oldukları bulunmuştur. Öğrencilerin %50,4'ü Hacettepe Üniversitesinin değişik bölümlerinden mezun olduğu, bu üniversiteyi sırasıyla Orta Doğu Teknik Üniversitesi, Gazi Üniversitesi, Anadolu Üniversitesi, Ankara Üniversitesi, Başkent Üniversitesi ve Dokuz Eylül Üniversitesi'nin izlediği tespit edilmiştir. -->
+
+###  {.tabset}
+
+Enstitüye ,başvuran 1408 aday öğrencilerin cinsiyet, başvurdukları düzey, ana bilim dalı ve mezun oldukları üniversite dağılımları grafiklerdeki gibidir. 
+
+#### Cinsiyet
+
+Aday öğrencilerin %72,3’ü kadın, %27,7’si erkektir. 
+
+<br>   
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+
+library(htmltools)
+
+ browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+
+  div(p1)))
+
+
+```
+
+#### Öğretim Düzeyi
+       
+Öğrencilerin %34,2'si yüksek lisans , %21,7'si doktora ,%16,7'sı tezsiz yüksek lisans, %26,3'ü uzaktan tezsiz yüksek lisans ve %1,07'si bütünleşik doktora programına başvurmuştur.
+
+<br>   
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+
+library(htmltools)
+
+ browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+
+  div(p4)))
+
+
+```
+
+#### Anabilim Dalı
+
+%50,6'ile Eğitim Bilimleri Ana Bilim dalı en çok başvuru yapılan anabilim dalı oludğu görülmektedir.
+ 
+<br>   
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+
+library(htmltools)
+
+ browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+
+  div(p2)))
+
+
+```
+
+
+#### Mezun Olunan Üniversite
+
+Aday öğrencilerin 100'den fazla farklı değişik üniversiteden mezun oldukları bulunmuştur. Öğrencilerin %33,5'i Hacettepe Üniversitesinin değişik bölümlerinden mezun olduğu, bu üniversiteyi sırasıyla Gazi Üniversitesi, Ankara Üniversitesi, Orta Doğu Teknik Üniversitesi,  Anadolu Üniversitesi'nin izlediği tespit edilmiştir.
+
+<br>   
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+
+library(htmltools)
+
+ browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+
+  div(p3)))
+
+
+```
+
+
+
+
+
+###  {.tabset}
+
+Aday öğrencilerin başvurdukları anabilim dalı ve öğretim düzeyine göre transkript, ALES  ve yabancı dil puanları dağılımları aşağıdaki gibidir. Öğrenciler başvurları sırasından YDS, E-YDS,YOKDIL, KPDS, TOEFL ve IELTS olmak üzere farklı sınav puanlarını kullanmışlardır. En sık kullanılan üç puan türü sırası YOKDIL, YDS ve E-YDS'dir. Bşavuru puanları dağılımları grafiklerde yer almaktadır.
+
+#### Transkript
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+ browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(p5),
+
+))
+ 
+```
+
+
+#### ALES
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+ browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(p6)
+
+
+))
+ 
+```
+
+
+#### Yabancı Dil
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+ browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(p7)
+
+))
+ 
+```
+
+## Aday Öğrenci Kayıt Durumu
+
+
+## Kayıtlı Öğrenciler
+
+Aday öğrencilerden kesin kayıt hakkı kazanan 425 öğrenciden 295'u,  yedek kayıt hakkı olan 132 öğrenciden 34'ü olmak üzere 329 öğrenci programlara kayıt yaptırmıştır. 
+
+Programların kontenjanları ve kayıt olan öğrenci sayılaları öğretim düzeyine göre ayrı grafiklerde verilmiştir.
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+library(readxl)
+library(tidyr)
+
+kont <- read_excel("kont.xlsx")
+kont1 <- gather(kont,key = "Toplam", value = "frekans",
+       Kontenjan,Kayitli)
+
+kont_Tezsiz <- kont %>% filter(Ogretim_Duzeyi == "Tezsiz YL")
+kont_UTezsiz <- kont %>% filter(Ogretim_Duzeyi == "Uzaktan Tezsiz YL")
+
+kont_YL <- kont %>% filter(Ogretim_Duzeyi == "YL")
+kont_DR <- kont %>% filter(Ogretim_Duzeyi == "Doktora")
+
+
+kont_YLp <- plot_ly(kont_YL, x = ~ABD, y = ~Kontenjan, type = 'bar', name = 'Kontenjan', marker = list(color = 'rgb(49,130,189)'))%>% 
+  add_trace(y = ~Kayitli, name = 'Kayıtlı Öğrenci', marker = list(color = 'rgb(204,204,204)')) %>% 
+  layout(xaxis = list(title = "Ana Bilim Dalı", tickangle = -45),
+         yaxis = list(title = "Frekans"),
+         margin = list(b = 100),
+         barmode = 'group')
+
+
+
+
+kont_DRp <- plot_ly(kont_DR, x = ~ABD, y = ~Kontenjan, type = 'bar', name = 'Kontenjan', marker = list(color = 'rgb(49,130,189)'))%>% 
+  add_trace(y = ~Kayitli, name = 'Kayıtlı Öğrenci', marker = list(color = 'rgb(204,204,204)')) %>% 
+  layout(xaxis = list(title = "Ana Bilim Dalı", tickangle = -45),
+         yaxis = list(title = "Frekans"),
+         margin = list(b = 100),
+         barmode = 'group')
+
+
+kont_Tezsizp <- plot_ly(kont_Tezsiz, x = ~ABD, y = ~Kontenjan, type = 'bar', name = 'Kontenjan', marker = list(color = 'rgb(49,130,189)'))%>% 
+  add_trace(y = ~Kayitli, name = 'Kayıtlı Öğrenci', marker = list(color = 'rgb(204,204,204)')) %>% 
+  layout(xaxis = list(title = "Ana Bilim Dalı", tickangle = -45),
+         yaxis = list(title = "Frekans"),
+         margin = list(b = 100),
+         barmode = 'group')
+
+
+kont_UTezsizp <- plot_ly(kont_UTezsiz, x = ~ABD, y = ~Kontenjan, type = 'bar', name = 'Kontenjan', marker = list(color = 'rgb(49,130,189)'))%>% 
+  add_trace(y = ~Kayitli, name = 'Kayıtlı Öğrenci', marker = list(color = 'rgb(204,204,204)')) %>% 
+  layout(xaxis = list(title = "Ana Bilim Dalı", tickangle = -45),
+         yaxis = list(title = "Frekans"),
+         margin = list(b = 100),
+         barmode = 'group')
+
+
+```
+
+###  {.tabset}
+
+#### Uzaktan Tezsiz Yüksek Lisans
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+kont_UTezsizp
+```
+
+
+####  Tezsiz Yüksek Lisans
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+kont_Tezsizp
+```
+
+
+####  Yüksek Lisans
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+kont_YLp
+```
+
+####  Doktora
+
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+kont_DRp
+```
+
+
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+
+Kayitli_ABD <- Kayitli %>% 
+  group_by(Anabilim_Dali, Ogretim_Duzeyi) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+
+Kayitli_Cinsiyet <- Kayitli %>% 
+  group_by(Anabilim_Dali, Cinsiyet) %>%
+  summarise(toplam = n(), .groups = 'drop') 
+
+pal <- c("red","blue")
+pal <- setNames(pal, c("Kadın", "Erkek"))
+
+p8 <- Kayitli_ABD %>% plot_ly(x = ~Anabilim_Dali, y = ~toplam, color = ~Ogretim_Duzeyi) %>% 
+  layout(yaxis = list(title = 'Frekans'), 
+         xaxis = list(title = 'Ana Bilim Dalları'),barmode = 'group')
+
+
+
+p9 <- Kayitli_Cinsiyet %>% plot_ly(x = ~Anabilim_Dali, y = ~toplam, color = ~Cinsiyet,colors = pal) %>% 
+  layout(yaxis = list(title = 'Frekans'), 
+         xaxis = list(title = 'Ana Bilim Dalları'),barmode = 'group')
+
+
+Kayitli_Uni <- Kayitli %>%  group_by(Anabilim_Dali, Ogretim_Duzeyi, Mezun_Uni) %>%
+  summarise(toplam = n(), .groups = 'drop')  %>% arrange(-toplam)
+
+# filter(Kayitli_Uni, Anabilim_Dali=="Bilgisayar ve Öğretim Teknolojileri Eğitimi") %>% plot_ly(x = ~Anabilim_Dali, y = ~toplam, color = ~Cinsiyet,
+#                              colors = pal)
+```
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+ browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(p8),
+    div(p9),
+
+))
+ 
+```
+
+
+### Ana Bilim Dalları {.tabset}
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+BOTE <- Kayitli %>% filter(Anabilim_Dali=="Bilgisayar ve Öğretim Teknolojileri Eğitimi")
+EBB <- Kayitli %>% filter(Anabilim_Dali=="Eğitim Bilimleri")
+Mat_Fen <- Kayitli %>% filter(Anabilim_Dali=="Matematik ve Fen Bilimleri Eğitimi")
+Ozel_Egitim <- Kayitli %>% filter(Anabilim_Dali=="Özel Eğitim")  
+Temel <- Kayitli %>% filter(Anabilim_Dali=="Temel Eğitim")  
+Turkce <- Kayitli %>% filter(Anabilim_Dali=="Türkçe ve Sosyal Bilimler Eğitimi")
+Yabanci <- Kayitli %>% filter(Anabilim_Dali=="Yabancı Diller Eğitimi")
+YuksekOgretim <- Kayitli %>% filter(Anabilim_Dali=="Yükseköğretimin Yönetimi")
+```
+
+### Bilgisayar ve Öğretim Teknolojileri Eğitimi
+
+**Bilgisayar ve Öğretim Teknolojileri Eğitimi**
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+
+
+
+BOTE_Cinsiyet <- BOTE %>% group_by(Cinsiyet) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+BOTE_Cinsiyet_p1 <- plot_ly(BOTE_Cinsiyet) %>%
+add_pie(BOTE_Cinsiyet, labels = ~`Cinsiyet`, values = ~`toplam`,
+          type = 'pie', hole = 0.5,
+         marker = list(colors = c("1" =  "blue",
+                                 "2" = "red"))) %>%
+        layout(title = 'Cinsiyet Dağılımı')
+
+BOTE_Ogretim <- BOTE %>% group_by(Ogretim_Duzeyi) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+BOTE_Ogretim_p1 <- plot_ly(BOTE_Ogretim) %>%
+add_pie(BOTE_Ogretim, labels = ~`Ogretim_Duzeyi`, values = ~`toplam`,
+          type = 'pie', hole = 0.5) %>%
+        layout(title = 'Öğretim Düzeyi Dağılımı')
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(BOTE_Cinsiyet_p1, style = "width: 40%"),
+  div(BOTE_Ogretim_p1, style = "width: 50%")
+))
+ 
+
+
+BOTE_Uni <- BOTE %>% 
+group_by(Ogretim_Duzeyi,Mezun_Uni) %>% 
+  summarise(toplam = n(), .groups = 'drop') %>% arrange(-toplam)
+
+BOTE_Uni_d <- filter(BOTE_Uni, Ogretim_Duzeyi=="Doktora")
+BOTE_Uni_yl <- filter(BOTE_Uni, Ogretim_Duzeyi=="YL")
+
+
+BOTE_Uni_d_p1 <- plot_ly(BOTE_Uni_d) %>% 
+ add_pie(BOTE_Uni_d, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'Doktora Programında \n Mezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+BOTE_Uni_yl_p1 <- plot_ly(BOTE_Uni_yl) %>% 
+ add_pie(BOTE_Uni_yl, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'YL Programında \nMezun Olunan Üniversite Dağılımı\n\n\n')
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(BOTE_Uni_d_p1, style = "width: 50%"),
+  div(BOTE_Uni_yl_p1, style = "width: 50%")
+))
+ 
+
+BOTE_ort <- BOTE %>% mutate(Dil_Puan = as.numeric(Dil_Puan),Transkript_Puan = as.numeric(Transkript_Puan) ) %>% 
+  group_by(Anabilim_Dali,Ogretim_Duzeyi) %>% 
+  summarize(ALES_Puan= mean(ALES_Puan,na.rm=TRUE),
+            Dil_Puan= mean(Dil_Puan,na.rm=TRUE),
+            Transkript_Puan= mean(Transkript_Puan,na.rm=TRUE),.groups = 'drop')
+
+
+BOTE_ort_1 <-BOTE_ort %>% gather(key="TUR", value="puan", 3:5)
+
+BOTE_ort_1_p <- plot_ly(data = BOTE_ort_1,
+             x = ~TUR,
+             y = ~puan, color = ~Ogretim_Duzeyi,
+             type = "bar"
+) %>% 
+     layout(title = "Puan Ortalamaları Grafiği",
+            xaxis = list(title = "Puan Türleri"),
+            yaxis = list(title = "Puan")
+)
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(BOTE_ort_1_p)
+))
+ 
+```
+
+
+
+
+### Eğitim Bilimleri Ana Bilim Dalı
+
+**Eğitim Bilimleri Ana Bilim Dalı**
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+
+
+
+EBB_Cinsiyet <- EBB %>% group_by(Cinsiyet) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+EBB_Cinsiyet_p1 <- plot_ly(EBB_Cinsiyet) %>%
+add_pie(EBB_Cinsiyet, labels = ~`Cinsiyet`, values = ~`toplam`,
+          type = 'pie', hole = 0.5,
+         marker = list(colors = c("1" =  "blue",
+                                 "2" = "red"))) %>%
+        layout(title = 'Cinsiyet Dağılımı')
+
+EBB_Ogretim <- EBB %>% group_by(Ogretim_Duzeyi) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+EBB_Ogretim_p1 <- plot_ly(EBB_Ogretim) %>%
+add_pie(EBB_Ogretim, labels = ~`Ogretim_Duzeyi`, values = ~`toplam`,
+          type = 'pie', hole = 0.5) %>%
+        layout(title = 'Öğretim Düzeyi Dağılımı')
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(EBB_Cinsiyet_p1, style = "width: 40%"),
+  div(EBB_Ogretim_p1, style = "width: 50%")
+))
+ 
+
+
+EBB_Uni <- EBB %>% 
+group_by(Ogretim_Duzeyi,Mezun_Uni) %>% 
+  summarise(toplam = n(), .groups = 'drop') %>% arrange(-toplam)
+
+EBB_Uni_d <- filter(EBB_Uni, Ogretim_Duzeyi=="Doktora")
+EBB_Uni_yl <- filter(EBB_Uni, Ogretim_Duzeyi=="YL")
+EBB_Uni_tyl <- filter(EBB_Uni, Ogretim_Duzeyi=="Tezsiz YL")
+EBB_Uni_tuyl <- filter(EBB_Uni, Ogretim_Duzeyi=="Uzaktan Tezsiz YL")
+
+
+
+
+EBB_Uni_d_p1 <- plot_ly(EBB_Uni_d) %>% 
+ add_pie(EBB_Uni_d, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'Doktora Programında \n Mezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+EBB_Uni_yl_p1 <- plot_ly(EBB_Uni_yl) %>% 
+ add_pie(EBB_Uni_yl, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'YL Programında \nMezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+
+EBB_Uni_tyl_p1 <- plot_ly(EBB_Uni_tyl) %>% 
+ add_pie(EBB_Uni_tyl, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'Tezsiz YL Programında \nMezun Olunan Üniversite Dağılımı\n\n\n')
+
+EBB_Uni_tuyl_p1 <- plot_ly(EBB_Uni_tuyl) %>% 
+ add_pie(EBB_Uni_tuyl, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'Tezsiz Uzaktan YL Programında \nMezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+  div(EBB_Uni_d_p1, style = "width: 50%"),
+  div(EBB_Uni_yl_p1, style = "width: 50%")
+))
+ 
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(EBB_Uni_tyl_p1, style = "width: 50%"),
+  div(EBB_Uni_tuyl_p1, style = "width: 50%")
+))
+ 
+pal1 <- c("purple","orange","grey","blue","magenta")
+pal1 <- setNames(pal1, c("Eğitim Programları ve Öğretim", "Eğitim Yönetimi", "Eğitimde Ölçme ve Değerlendirme","Rehberlik ve Psikolojik Danışmanlık",
+              "Okul Yöneticiliği ve Eğitim Deneticiliği" ))
+
+EBB_ort <- EBB %>% mutate(Dil_Puan = as.numeric(Dil_Puan),Transkript_Puan = as.numeric(Transkript_Puan) ) %>% 
+  group_by(Anabilim_Dali,Ogretim_Programı, Ogretim_Duzeyi) %>% 
+  summarize(ALES_Puan= mean(ALES_Puan,na.rm=TRUE),
+            Dil_Puan= mean(Dil_Puan,na.rm=TRUE),
+            Transkript_Puan= mean(Transkript_Puan,na.rm=TRUE),.groups = 'drop')
+
+
+EBB_ort_1 <-EBB_ort %>% gather(key="TUR", value="puan", 4:6)
+
+
+EBB_ort_1_p <- plot_ly(data =filter(EBB_ort_1, Ogretim_Duzeyi=="Doktora"),
+             x = ~TUR,
+             y = ~puan, color = ~Ogretim_Programı,colors = pal1,
+             type = "bar"
+)%>% 
+     layout(title = "Doktora Programlarında Puan Ortalamaları Grafiği",
+            xaxis = list(title = "Puan Türleri"),
+            yaxis = list(title = "Puan")
+)
+
+
+EBB_ort_2_p <- plot_ly(data =filter(EBB_ort_1, Ogretim_Duzeyi=="YL"),
+             x = ~TUR,
+             y = ~puan, color = ~Ogretim_Programı,colors = pal1,
+             type = "bar"
+)%>% 
+     layout(title = "YL Programlarında Puan Ortalamaları Grafiği",
+            xaxis = list(title = "Puan Türleri"),
+            yaxis = list(title = "Puan")
+)
+
+
+EBB_ort_3_p <- plot_ly(data =filter(EBB_ort_1, Ogretim_Duzeyi=="Tezsiz YL"),
+             x = ~TUR,
+             y = ~puan, color = ~Ogretim_Programı,colors = pal1,
+             type = "bar"
+)%>% 
+     layout(title = "Tezsiz YL Programlarında Puan Ortalamaları Grafiği",
+            xaxis = list(title = "Puan Türleri"),
+            yaxis = list(title = "Puan")
+)
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(EBB_ort_1_p),
+      div(EBB_ort_2_p),
+          div(EBB_ort_3_p)
+
+))
+ 
+```
+
+
+### Matematik ve Fen Bilimleri Eğitimi Ana Bilim Dalı
+
+
+**Matematik ve Fen Bilimleri Eğitimi Ana Bilim Dalı**
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+
+
+
+Mat_Fen_Cinsiyet <- Mat_Fen %>% group_by(Cinsiyet) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+Mat_Fen_Cinsiyet_p1 <- plot_ly(Mat_Fen_Cinsiyet) %>%
+add_pie(Mat_Fen_Cinsiyet, labels = ~`Cinsiyet`, values = ~`toplam`,
+          type = 'pie', hole = 0.5,
+         marker = list(colors = c("1" =  "blue",
+                                 "2" = "red"))) %>%
+        layout(title = 'Cinsiyet Dağılımı')
+
+Mat_Fen_Ogretim <- Mat_Fen %>% group_by(Ogretim_Duzeyi) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+Mat_Fen_Ogretim_p1 <- plot_ly(Mat_Fen_Ogretim) %>%
+add_pie(EBB_Ogretim, labels = ~`Ogretim_Duzeyi`, values = ~`toplam`,
+          type = 'pie', hole = 0.5) %>%
+        layout(title = 'Öğretim Düzeyi Dağılımı')
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(Mat_Fen_Cinsiyet_p1, style = "width: 40%"),
+  div(Mat_Fen_Ogretim_p1, style = "width: 50%")
+))
+ 
+
+
+Mat_Fen_Uni <- Mat_Fen %>% 
+group_by(Ogretim_Duzeyi,Mezun_Uni) %>% 
+  summarise(toplam = n(), .groups = 'drop') %>% arrange(-toplam)
+
+Mat_Fen_Uni_d <- filter(Mat_Fen_Uni, Ogretim_Duzeyi=="Doktora")
+Mat_Fen_Uni_yl <- filter(Mat_Fen_Uni, Ogretim_Duzeyi=="YL")
+Mat_Fen_Uni_tuyl <- filter(Mat_Fen_Uni, Ogretim_Duzeyi=="Uzaktan Tezsiz YL")
+
+
+
+
+Mat_Fen_d_p1 <- plot_ly(Mat_Fen_Uni_d) %>% 
+ add_pie(Mat_Fen_Uni_d, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'Doktora Programında \n Mezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+Mat_Fen_Uni_yl_p1 <- plot_ly(Mat_Fen_Uni_yl) %>% 
+ add_pie(Mat_Fen_Uni_yl, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'YL Programında \nMezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+Mat_Fen_Uni_tuyl_p1 <- plot_ly(Mat_Fen_Uni_tuyl) %>% 
+ add_pie(Mat_Fen_Uni_tuyl, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'Tezsiz Uzaktan YL Programında \nMezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+  div(Mat_Fen_d_p1, style = "width: 50%"),
+  div(Mat_Fen_Uni_yl_p1, style = "width: 50%")
+))
+ 
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(Mat_Fen_Uni_tuyl_p1, style = "width: 50%"),
+))
+ 
+pal1 <- c("purple","orange","grey","blue","magenta")
+pal1 <- setNames(pal1, c("Fen Bilgisi Eğitimi",
+                         "Kimya Eğitimi",
+                         "Kimya Eğitiminde Teknoloji ve Çevre Eğitimi",
+                         "Matematik Eğitimi",
+                          "Matematik ve Fen Bilimleri Eğitimi" ))
+
+Mat_Fen_ort <- Mat_Fen %>% mutate(Dil_Puan = as.numeric(Dil_Puan),Transkript_Puan = as.numeric(Transkript_Puan) ) %>% 
+  group_by(Anabilim_Dali,Ogretim_Programı, Ogretim_Duzeyi) %>% 
+  summarize(ALES_Puan= mean(ALES_Puan,na.rm=TRUE),
+            Dil_Puan= mean(Dil_Puan,na.rm=TRUE),
+            Transkript_Puan= mean(Transkript_Puan,na.rm=TRUE),.groups = 'drop')
+
+
+Mat_Fen_ort_1 <-Mat_Fen_ort %>% gather(key="TUR", value="puan", 4:6)
+
+
+Mat_Fen_ort_1_p <- plot_ly(data =filter(Mat_Fen_ort_1, Ogretim_Duzeyi=="Doktora"),
+             x = ~TUR,
+             y = ~puan, color = ~Ogretim_Programı,colors = pal1,
+             type = "bar"
+)%>% 
+     layout(title = "Doktora Programlarında Puan Ortalamaları Grafiği",
+            xaxis = list(title = "Puan Türleri"),
+            yaxis = list(title = "Puan")
+)
+
+
+Mat_Fen_ort_2_p <- plot_ly(data =filter(Mat_Fen_ort_1, Ogretim_Duzeyi=="YL"),
+             x = ~TUR,
+             y = ~puan, color = ~Ogretim_Programı,colors = pal1,
+             type = "bar"
+)%>% 
+     layout(title = "YL Programlarında Puan Ortalamaları Grafiği",
+            xaxis = list(title = "Puan Türleri"),
+            yaxis = list(title = "Puan")
+)
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(Mat_Fen_ort_1_p),
+      div(Mat_Fen_ort_2_p)
+
+))
+ 
+```
+
+
+### Özel Eğitim Ana Bilim Dalı
+**Özel Eğitim Ana Bilim Dalı**
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+
+
+Ozel_Egitim_Cinsiyet <- Ozel_Egitim %>% group_by(Cinsiyet) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+Ozel_Egitim_Cinsiyet_p1 <- plot_ly(Ozel_Egitim_Cinsiyet) %>%
+  add_pie(Ozel_Egitim_Cinsiyet, labels = ~`Cinsiyet`, values = ~`toplam`,
+          type = 'pie', hole = 0.5,
+          marker = list(colors = c("1" =  "blue",
+                                   "2" = "red"))) %>%
+  layout(title = 'Cinsiyet Dağılımı')
+
+Ozel_Egitim_Ogretim <- Ozel_Egitim %>% group_by(Ogretim_Duzeyi) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+Ozel_Egitim_Ogretim_p1 <- plot_ly(Ozel_Egitim_Ogretim) %>%
+  add_pie(Ozel_Egitim_Ogretim, labels = ~`Ogretim_Duzeyi`, values = ~`toplam`,
+          type = 'pie', hole = 0.5) %>%
+  layout(title = 'Öğretim Düzeyi Dağılımı')
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+  div(Ozel_Egitim_Cinsiyet_p1, style = "width: 40%"),
+  div(Ozel_Egitim_Ogretim_p1, style = "width: 50%")
+))
+
+
+
+Ozel_Egitim_Uni <- Ozel_Egitim %>% 
+  group_by(Ogretim_Duzeyi,Mezun_Uni) %>% 
+  summarise(toplam = n(), .groups = 'drop') %>% arrange(-toplam)
+
+Ozel_Egitim_Uni_d <- filter(Ozel_Egitim_Uni, Ogretim_Duzeyi=="Doktora")
+Ozel_Egitim_Uni_yl <- filter(Ozel_Egitim_Uni, Ogretim_Duzeyi=="YL")
+
+
+
+
+Ozel_Egitim_Uni_d_p1 <- plot_ly(Ozel_Egitim_Uni_d) %>% 
+  add_pie(Ozel_Egitim_Uni_d, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+          type = 'pie', hole = 0.5) %>% 
+  layout(title = 'Doktora Programında \n Mezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+Ozel_Egitim_Uni_yl_p1 <- plot_ly(Ozel_Egitim_Uni_yl) %>% 
+  add_pie(Ozel_Egitim_Uni_yl, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+          type = 'pie', hole = 0.5) %>% 
+  layout(title = 'YL Programında \nMezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+  div(Ozel_Egitim_Uni_d_p1, style = "width: 50%"),
+  div(Ozel_Egitim_Uni_yl_p1, style = "width: 50%")
+))
+
+
+
+pal1 <- c("purple","grey","blue")
+pal1 <- setNames(pal1, c("Otizm Spektrum Bozukluğu Eğitimi",
+                         "Özel Yetenekliler Eğitimi"))
+
+Ozel_Egitim_ort <- Ozel_Egitim %>% mutate(Dil_Puan = as.numeric(Dil_Puan),Transkript_Puan = as.numeric(Transkript_Puan) ) %>% 
+  group_by(Anabilim_Dali,Ogretim_Programı, Ogretim_Duzeyi) %>% 
+  summarize(ALES_Puan= mean(ALES_Puan,na.rm=TRUE),
+            Dil_Puan= mean(Dil_Puan,na.rm=TRUE),
+            Transkript_Puan= mean(Transkript_Puan,na.rm=TRUE),.groups = 'drop')
+
+
+Ozel_Egitim_ort_1 <-Ozel_Egitim_ort %>% gather(key="TUR", value="puan", 4:6)
+
+
+Ozel_Egitim_ort_1_p <- plot_ly(data =filter(Ozel_Egitim_ort_1, Ogretim_Duzeyi=="Doktora"),
+                               x = ~TUR,
+                               y = ~puan, color = ~Ogretim_Programı,colors = pal1,
+                               type = "bar"
+)%>% 
+  layout(title = "Doktora Programlarında Puan Ortalamaları Grafiği",
+         xaxis = list(title = "Puan Türleri"),
+         yaxis = list(title = "Puan")
+  )
+
+
+Ozel_Egitim_ort_2_p <- plot_ly(data =filter(Ozel_Egitim_ort_1, Ogretim_Duzeyi=="YL"),
+                               x = ~TUR,
+                               y = ~puan, color = ~Ogretim_Programı,colors = pal1,
+                               type = "bar"
+)%>% 
+  layout(title = "YL Programlarında Puan Ortalamaları Grafiği",
+         xaxis = list(title = "Puan Türleri"),
+         yaxis = list(title = "Puan")
+  )
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+  div(Ozel_Egitim_ort_1_p),
+  div(Ozel_Egitim_ort_2_p)
+  
+))
+
+
+ 
+```
+
+### Temel Eğitim Ana Bilim Dalı
+**Temel Eğitim Ana Bilim Dalı**
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+
+
+
+Temel_Cinsiyet <- Temel %>% group_by(Cinsiyet) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+Temel_Cinsiyet_p1 <- plot_ly(Temel_Cinsiyet) %>%
+add_pie(Temel_Cinsiyet, labels = ~`Cinsiyet`, values = ~`toplam`,
+          type = 'pie', hole = 0.5,
+         marker = list(colors = c("1" =  "blue",
+                                 "2" = "red"))) %>%
+        layout(title = 'Cinsiyet Dağılımı')
+
+Temel_Ogretim <- Temel %>% group_by(Ogretim_Duzeyi) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+Temel_Ogretim_p1 <- plot_ly(Temel_Ogretim) %>%
+add_pie(EBB_Ogretim, labels = ~`Ogretim_Duzeyi`, values = ~`toplam`,
+          type = 'pie', hole = 0.5) %>%
+        layout(title = 'Öğretim Düzeyi Dağılımı')
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(Temel_Cinsiyet_p1, style = "width: 40%"),
+  div(Temel_Ogretim_p1, style = "width: 50%")
+))
+ 
+
+
+Temel_Uni <- Temel %>% 
+group_by(Ogretim_Duzeyi,Mezun_Uni) %>% 
+  summarise(toplam = n(), .groups = 'drop') %>% arrange(-toplam)
+
+Temel_Uni_d <- filter(Temel_Uni, Ogretim_Duzeyi=="Doktora")
+Temel_Uni_yl <- filter(Temel_Uni, Ogretim_Duzeyi=="YL")
+Temel_Uni_tyl <- filter(Temel_Uni, Ogretim_Duzeyi=="Tezsiz YL")
+Temel_Uni_tuyl <- filter(Temel_Uni, Ogretim_Duzeyi=="Uzaktan Tezsiz YL")
+
+
+
+
+Temel_d_p1 <- plot_ly(Temel_Uni_d) %>% 
+ add_pie(Temel_Uni_d, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'Doktora Programında \n Mezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+Temel_Uni_yl_p1 <- plot_ly(Temel_Uni_yl) %>% 
+ add_pie(Temel_Uni_yl, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'YL Programında \nMezun Olunan Üniversite Dağılımı\n\n\n')
+
+Temel_Uni_tyl_p1 <- plot_ly(Temel_Uni_tyl) %>% 
+ add_pie(Temel_Uni_tuyl, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'Tezsiz YL Programında \nMezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+Temel_Uni_tuyl_p1 <- plot_ly(Temel_Uni_tuyl) %>% 
+ add_pie(Temel_Uni_tuyl, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'Tezsiz Uzaktan YL Programında \nMezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+  div(Temel_d_p1, style = "width: 50%"),
+  div(Temel_Uni_yl_p1, style = "width: 50%")
+))
+ 
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+      div(Temel_Uni_tyl_p1, style = "width: 50%"),
+
+    div(Temel_Uni_tuyl_p1, style = "width: 50%"),
+))
+ 
+pal1 <- c("purple","grey","blue","magenta")
+pal1 <- setNames(pal1, c("Okul Öncesi Eğitimi",
+                         "Okul Öncesi Eğitimi Tezsiz Yüksek Lisans",
+                         "Sınıf Eğitimi" ,
+                         "Sınıf Öğretmenliği Uzaktan Eğitim Tezsiz" ))
+
+Temel_ort <- Temel %>% mutate(Dil_Puan = as.numeric(Dil_Puan),Transkript_Puan = as.numeric(Transkript_Puan) ) %>% 
+  group_by(Anabilim_Dali,Ogretim_Programı, Ogretim_Duzeyi) %>% 
+  summarize(ALES_Puan= mean(ALES_Puan,na.rm=TRUE),
+            Dil_Puan= mean(Dil_Puan,na.rm=TRUE),
+            Transkript_Puan= mean(Transkript_Puan,na.rm=TRUE),.groups = 'drop')
+
+
+Temel_ort_1 <-Temel_ort %>% gather(key="TUR", value="puan", 4:6)
+
+
+Temel_ort_1_p <- plot_ly(data =filter(Temel_ort_1, Ogretim_Duzeyi=="Doktora"),
+             x = ~TUR,
+             y = ~puan, color = ~Ogretim_Programı,colors = pal1,
+             type = "bar"
+)%>% 
+     layout(title = "Doktora Programlarında Puan Ortalamaları Grafiği",
+            xaxis = list(title = "Puan Türleri"),
+            yaxis = list(title = "Puan")
+)
+
+
+Temel_ort_2_p <- plot_ly(data =filter(Temel_ort_1, Ogretim_Duzeyi=="YL"),
+             x = ~TUR,
+             y = ~puan, color = ~Ogretim_Programı,colors = pal1,
+             type = "bar"
+)%>% 
+     layout(title = "YL Programlarında Puan Ortalamaları Grafiği",
+            xaxis = list(title = "Puan Türleri"),
+            yaxis = list(title = "Puan")
+)
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(Temel_ort_1_p),
+      div(Temel_ort_2_p)
+
+))
+ 
+```
+
+### Türkçe ve Sosyal Bilimler Eğitimi Ana Bilim
+**Türkçe ve Sosyal Bilimler Eğitimi Ana Bilim**
+
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+
+
+
+Turkce_Cinsiyet <- Turkce %>% group_by(Cinsiyet) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+Turkce_Cinsiyet_p1 <- plot_ly(Turkce_Cinsiyet) %>%
+add_pie(Turkce_Cinsiyet, labels = ~`Cinsiyet`, values = ~`toplam`,
+          type = 'pie', hole = 0.5,
+         marker = list(colors = c("1" =  "blue",
+                                 "2" = "red"))) %>%
+        layout(title = 'Cinsiyet Dağılımı')
+
+Turkce_Ogretim <- Turkce %>% group_by(Ogretim_Duzeyi) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+Turkce_Ogretim_p1 <- plot_ly(Turkce_Ogretim) %>%
+add_pie(EBB_Ogretim, labels = ~`Ogretim_Duzeyi`, values = ~`toplam`,
+          type = 'pie', hole = 0.5) %>%
+        layout(title = 'Öğretim Düzeyi Dağılımı')
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(Turkce_Cinsiyet_p1, style = "width: 40%"),
+  div(Turkce_Ogretim_p1, style = "width: 50%")
+))
+ 
+
+
+Turkce_Uni <- Turkce %>% 
+group_by(Ogretim_Duzeyi,Mezun_Uni) %>% 
+  summarise(toplam = n(), .groups = 'drop') %>% arrange(-toplam)
+
+Turkce_Uni_d <- filter(Turkce_Uni, Ogretim_Duzeyi=="Doktora")
+Turkce_Uni_yl <- filter(Turkce_Uni, Ogretim_Duzeyi=="YL")
+
+
+
+
+Turkce_d_p1 <- plot_ly(Turkce_Uni_d) %>% 
+ add_pie(Turkce_Uni_d, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'Doktora Programında \n Mezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+Turkce_Uni_yl_p1 <- plot_ly(Turkce_Uni_yl) %>% 
+ add_pie(Turkce_Uni_yl, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'YL Programında \nMezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+
+
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+  div(Turkce_d_p1, style = "width: 50%"),
+  div(Turkce_Uni_yl_p1, style = "width: 50%")
+))
+ 
+
+ 
+pal1 <- c("purple","grey","blue")
+pal1 <- setNames(pal1, c("Türkçe Eğitimi Doktora Programı",
+                         "Türkçe Eğitimi Tezli Yüksek Lisans Programı",
+                         "Yurt Dışındaki Türk Çocuklarına Türkçe" ))
+
+Turkce_ort <- Turkce %>% mutate(Dil_Puan = as.numeric(Dil_Puan),Transkript_Puan = as.numeric(Transkript_Puan) ) %>% 
+  group_by(Anabilim_Dali,Ogretim_Programı, Ogretim_Duzeyi) %>% 
+  summarize(ALES_Puan= mean(ALES_Puan,na.rm=TRUE),
+            Dil_Puan= mean(Dil_Puan,na.rm=TRUE),
+            Transkript_Puan= mean(Transkript_Puan,na.rm=TRUE),.groups = 'drop')
+
+
+Turkce_ort_1 <-Turkce_ort %>% gather(key="TUR", value="puan", 4:6)
+
+
+Turkce_ort_1_p <- plot_ly(data =filter(Turkce_ort_1, Ogretim_Duzeyi=="Doktora"),
+             x = ~TUR,
+             y = ~puan, color = ~Ogretim_Programı,colors = pal1,
+             type = "bar"
+)%>% 
+     layout(title = "Doktora Programlarında Puan Ortalamaları Grafiği",
+            xaxis = list(title = "Puan Türleri"),
+            yaxis = list(title = "Puan")
+)
+
+
+Turkce_ort_2_p <- plot_ly(data =filter(Turkce_ort_1, Ogretim_Duzeyi=="YL"),
+             x = ~TUR,
+             y = ~puan, color = ~Ogretim_Programı,colors = pal1,
+             type = "bar"
+)%>% 
+     layout(title = "YL Programlarında Puan Ortalamaları Grafiği",
+            xaxis = list(title = "Puan Türleri"),
+            yaxis = list(title = "Puan")
+)
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(Turkce_ort_1_p),
+      div(Turkce_ort_2_p)
+
+))
+ 
+```
+
+### Yabancı Diller Eğitimi Ana Bilim Dalı
+**Yabancı Diller Eğitimi Ana Bilim Dalı**
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+
+
+
+Yabanci_Cinsiyet <- Yabanci %>% group_by(Cinsiyet) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+Yabanci_Cinsiyet_p1 <- plot_ly(Yabanci_Cinsiyet) %>%
+add_pie(Yabanci_Cinsiyet, labels = ~`Cinsiyet`, values = ~`toplam`,
+          type = 'pie', hole = 0.5,
+         marker = list(colors = c("1" =  "blue",
+                                 "2" = "red"))) %>%
+        layout(title = 'Cinsiyet Dağılımı')
+
+Yabanci_Ogretim <- Yabanci %>% group_by(Ogretim_Duzeyi) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+Yabanci_Ogretim_p1 <- plot_ly(Yabanci_Ogretim) %>%
+add_pie(EBB_Ogretim, labels = ~`Ogretim_Duzeyi`, values = ~`toplam`,
+          type = 'pie', hole = 0.5) %>%
+        layout(title = 'Öğretim Düzeyi Dağılımı')
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(Yabanci_Cinsiyet_p1, style = "width: 40%"),
+  div(Yabanci_Ogretim_p1, style = "width: 50%")
+))
+ 
+
+
+Yabanci_Uni <- Yabanci %>% 
+group_by(Ogretim_Duzeyi,Mezun_Uni) %>% 
+  summarise(toplam = n(), .groups = 'drop') %>% arrange(-toplam)
+
+Yabanci_Uni_d <- filter(Yabanci_Uni, Ogretim_Duzeyi=="Doktora")
+Yabanci_Uni_yl <- filter(Yabanci_Uni, Ogretim_Duzeyi=="YL")
+
+
+
+
+Yabanci_d_p1 <- plot_ly(Yabanci_Uni_d) %>% 
+ add_pie(Yabanci_Uni_d, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'Doktora Programında \n Mezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+Yabanci_Uni_yl_p1 <- plot_ly(Yabanci_Uni_yl) %>% 
+ add_pie(Yabanci_Uni_yl, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'YL Programında \nMezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+
+
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+  div(Yabanci_d_p1, style = "width: 50%"),
+  div(Yabanci_Uni_yl_p1, style = "width: 50%")
+))
+ 
+
+ 
+pal1 <- c("purple","blue")
+pal1 <- setNames(pal1, c("Fransız Dili Eğitimi",
+                         "İngiliz Dili Eğitimi"))
+
+Yabanci_ort <- Yabanci %>% mutate(Dil_Puan = as.numeric(Dil_Puan),Transkript_Puan = as.numeric(Transkript_Puan) ) %>% 
+  group_by(Anabilim_Dali,Ogretim_Programı, Ogretim_Duzeyi) %>% 
+  summarize(ALES_Puan= mean(ALES_Puan,na.rm=TRUE),
+            Dil_Puan= mean(Dil_Puan,na.rm=TRUE),
+            Transkript_Puan= mean(Transkript_Puan,na.rm=TRUE),.groups = 'drop')
+
+
+Yabanci_ort_1 <-Yabanci_ort %>% gather(key="TUR", value="puan", 4:6)
+
+
+Yabanci_ort_1_p <- plot_ly(data =filter(Yabanci_ort_1, Ogretim_Duzeyi=="Doktora"),
+             x = ~TUR,
+             y = ~puan, color = ~Ogretim_Programı,colors = pal1,
+             type = "bar"
+)%>% 
+     layout(title = "Doktora Programlarında Puan Ortalamaları Grafiği",
+            xaxis = list(title = "Puan Türleri"),
+            yaxis = list(title = "Puan")
+)
+
+
+Yabanci_ort_2_p <- plot_ly(data =filter(Yabanci_ort_1, Ogretim_Duzeyi=="YL"),
+             x = ~TUR,
+             y = ~puan, color = ~Ogretim_Programı,colors = pal1,
+             type = "bar"
+)%>% 
+     layout(title = "YL Programlarında Puan Ortalamaları Grafiği",
+            xaxis = list(title = "Puan Türleri"),
+            yaxis = list(title = "Puan")
+)
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(Yabanci_ort_1_p),
+      div(Yabanci_ort_2_p)
+
+))
+ 
+```
+
+
+
+
+### Yükseköğretimin Yönetimi Ana Bilim Dalı
+**Yükseköğretimin Yönetimi Ana Bilim Dalı**
+
+
+
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+
+
+
+YuksekOgretim_Cinsiyet <- YuksekOgretim %>% group_by(Cinsiyet) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+YuksekOgretim_Cinsiyet_p1 <- plot_ly(YuksekOgretim_Cinsiyet) %>%
+add_pie(YuksekOgretim_Cinsiyet, labels = ~`Cinsiyet`, values = ~`toplam`,
+          type = 'pie', hole = 0.5,
+         marker = list(colors = c("1" =  "blue",
+                                 "2" = "red"))) %>%
+        layout(title = 'Cinsiyet Dağılımı')
+
+YuksekOgretim_Ogretim <- YuksekOgretim %>% group_by(Ogretim_Duzeyi) %>%
+  summarise(toplam = n(), .groups = 'drop')
+
+YuksekOgretim_Ogretim_p1 <- plot_ly(YuksekOgretim_Ogretim) %>%
+add_pie(EBB_Ogretim, labels = ~`Ogretim_Duzeyi`, values = ~`toplam`,
+          type = 'pie', hole = 0.5) %>%
+        layout(title = 'Öğretim Düzeyi Dağılımı')
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+    div(YuksekOgretim_Cinsiyet_p1, style = "width: 40%"),
+  div(YuksekOgretim_Ogretim_p1, style = "width: 50%")
+))
+ 
+
+
+YuksekOgretim_Uni <- YuksekOgretim %>% 
+group_by(Ogretim_Duzeyi,Mezun_Uni) %>% 
+  summarise(toplam = n(), .groups = 'drop') %>% arrange(-toplam)
+
+YuksekOgretim_Uni_yl <- filter(YuksekOgretim_Uni, Ogretim_Duzeyi=="YL")
+
+
+# 
+# 
+# YuksekOgretim_d_p1 <- plot_ly(YuksekOgretim_Uni_d) %>% 
+#  add_pie(YuksekOgretim_Uni_d, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+#          type = 'pie', hole = 0.5) %>% 
+#             layout(title = 'Doktora Programında \n Mezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+YuksekOgretim_Uni_yl_p1 <- plot_ly(YuksekOgretim_Uni_yl) %>% 
+ add_pie(YuksekOgretim_Uni_yl, labels = ~`Mezun_Uni`, values = ~`toplam`, 
+         type = 'pie', hole = 0.5) %>% 
+            layout(title = 'YL Programında \nMezun Olunan Üniversite Dağılımı\n\n\n')
+
+
+
+
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+  div(YuksekOgretim_Uni_yl_p1, style = "width: 100%")
+))
+ 
+
+ 
+# pal1 <- c("purple","blue")
+# pal1 <- setNames(pal1, c("Fransız Dili Eğitimi",
+#                          "İngiliz Dili Eğitimi"))
+
+YuksekOgretim_ort <- YuksekOgretim %>% mutate(Dil_Puan = as.numeric(Dil_Puan),Transkript_Puan = as.numeric(Transkript_Puan) ) %>% 
+  group_by(Anabilim_Dali,Ogretim_Programı, Ogretim_Duzeyi) %>% 
+  summarize(ALES_Puan= mean(ALES_Puan,na.rm=TRUE),
+            Dil_Puan= mean(Dil_Puan,na.rm=TRUE),
+            Transkript_Puan= mean(Transkript_Puan,na.rm=TRUE),.groups = 'drop')
+
+
+YuksekOgretim_ort_1 <-YuksekOgretim_ort %>% gather(key="TUR", value="puan", 4:6)
+
+
+# YuksekOgretim_ort_1_p <- plot_ly(data =filter(YuksekOgretim_ort_1, Ogretim_Duzeyi=="Doktora"),
+#              x = ~TUR,
+#              y = ~puan, color = ~Ogretim_Programı,
+#              type = "bar"
+# )%>% 
+#      layout(title = "Doktora Programlarında Puan Ortalamaları Grafiği",
+#             xaxis = list(title = "Puan Türleri"),
+#             yaxis = list(title = "Puan")
+# )
+
+
+YuksekOgretim_ort_2_p <- plot_ly(data =filter(YuksekOgretim_ort_1, Ogretim_Duzeyi=="YL"),
+             x = ~TUR,
+             y = ~puan, color = ~Ogretim_Programı,
+             type = "bar"
+)%>% 
+     layout(title = "YL Programlarında Puan Ortalamaları Grafiği",
+            xaxis = list(title = "Puan Türleri"),
+            yaxis = list(title = "Puan")
+)
+
+
+browsable(div(
+  style = "display: flex; flex-wrap: wrap; justify-content: center",
+      div(YuksekOgretim_ort_2_p)
+
+))
+
+```
+
+# **Öğretim Süreci Raporu**
+
+## Lisansütü Ders Değerlendirme Anketi
+
+Hacettepe Üniversitesi Eğitim Bilimleri Enstitüsü adına hazırlanan bu rapor, 2022-2023 eğitim öğretim yılının güz döneminde lisansüstü düzeyde eğitimine devam etmekte olan öğrencilere çevrimiçi olarak uygulanan ders değerlendirme anketinin sonuçlarını içermektedir.
+
+İlgili ankette öğrencilerin eğitimine devam ettiği ana bilim dalı, program türü ve düzeyine ilişkin bilgilerin yanı sıra aşağıda yer alan 16 adet beşli likert tipinde ve 3 adet açık uçlu madde ile derslere ilişkin görüşleri alınmıştır.
+
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# Veri Setinin Hazırlanması
+
+library(readr)
+anket <- read_csv("Lisansüstü Ders Değerlendirme Anketi.csv")
+maddeler <- anket[, c(71:length(anket))]
+
+anket.2 <- anket[, -c(71:length(anket))]
+anket.2 <- anket.2[, -1]
+names(anket.2) <- sub("\\...*", "", names(anket.2))
+
+
+L <-
+  split.default(anket.2, f = gsub("(.*)\\..*", "\\1", names(anket.2)))
+L2 <- lapply(L, function(x)
+  apply(x, 1, function(y)
+    na.omit(y)[1]))
+library(dplyr)
+anket.3 <- as.data.frame(L2)
+anket.3 <- anket.3 %>% relocate(any_of(
+  c(
+    "Öğrencisi.olduğunuz.ana.bilim.dalını.seçiniz",
+    "Öğrenci.olarak.eğitim.gördüğünüz.programı.seçiniz",
+    "Öğrenci.olarak.eğitim.gördüğünüz.düzeyi.seçiniz",
+    "Değerlendirme.yapacağınız.dersi.seçiniz"
+  )
+))
+
+anket.4 <- cbind(anket.3, maddeler)
+
+anket.5 <- anket.4 %>% mutate(
+  "Öğrenci olarak eğitim gördüğünüz düzeyi seçiniz" =
+    coalesce(
+      Öğrenci.olarak.eğitim.gördüğünüz.düzeyi.seçiniz,
+      ...90,
+      ...91,
+      ...92,
+      ...94,
+      ...95
+    )
+)
+anket.5 <-  anket.5[, !names(anket.5) %in% c(
+  "Öğrenci.olarak.eğitim.gördüğünüz.düzeyi.seçiniz",
+  "...90",
+  "...91",
+  "...92",
+  "...94",
+  "...95"
+)]
+
+
+anket.6 <- anket.5 %>% mutate(
+  "Değerlendirme yapacağınız dersi seçiniz" =
+    coalesce(Değerlendirme.yapacağınız.dersi.seçiniz,
+             ...93)
+)
+anket.6 <-  anket.6[, !names(anket.6) %in% c("Değerlendirme.yapacağınız.dersi.seçiniz",
+                                             "...93")]
+anket.6 <- anket.6 %>%
+  relocate(
+    "Öğrenci olarak eğitim gördüğünüz düzeyi seçiniz",
+    "Değerlendirme yapacağınız dersi seçiniz",
+    .after =
+      "Öğrenci.olarak.eğitim.gördüğünüz.programı.seçiniz"
+  )
+```
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(readxl)
+anket.6 <- read_excel("ANKET.xlsx")
+```
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Aynı Yanıtların Çıkarılması ve Olumsuz Maddelerin Ters Kodlanması
+library(dplyr)
+anket.7 <- anket.6 %>%
+  rowwise() %>%
+  mutate(is_equal = n_distinct(c_across(where(is.numeric))) == 1) %>%
+  ungroup() %>% 
+  filter(is_equal == FALSE) %>% 
+  select(-is_equal) %>% 
+  rename(Öğrenci.olarak.eğitim.gördüğünüz.düzeyi.seçiniz =
+           "Öğrenci olarak eğitim gördüğünüz düzeyi seçiniz")
+
+
+# anket.7$`Derste hocayı anlamakta zorluk çektim.` <-
+#   recode(
+#     anket.7$`Derste hocayı anlamakta zorluk çektim.`,
+#     `1` = 5L,
+#     `2` = 4L,
+#     `3` = 3L,
+#     `4` = 2L,
+#     `5` = 1L
+#   )
+# 
+# anket.7$`Bu dersi aldığım öğretim elemanından bir ders daha almak istemem.` <-
+#   recode(
+#     anket.7$`Bu dersi aldığım öğretim elemanından bir ders daha almak istemem.`,
+#     `1` = 5L,
+#     `2` = 4L,
+#     `3` = 3L,
+#     `4` = 2L,
+#     `5` = 1L
+#   )
+# 
+# anket.7$`Dersin bir an önce bitmesini çok istedim.` <-
+#   recode(
+#     anket.7$`Dersin bir an önce bitmesini çok istedim.`,
+#     `1` = 5L,
+#     `2` = 4L,
+#     `3` = 3L,
+#     `4` = 2L,
+#     `5` = 1L
+#   )
+```
+
+-   Ölçekte yer alan maddeler aşağıda sunulmuştur. Bu maddelerden 1-16. sırada yer alanlar beşli likert tipinde olup son üç sırada yer alan 17-19. maddeler ise açık uçlu olarak hazırlanmıştır.
+
+----
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE,comment=""}
+for (i in 5:23) {
+  cat(i-4, ".", names(anket.7[,i]), sep = "", "\n")
+}
+```
+
+----
+
+
+## Anket Sonuçları
+
+#### Yanıtlara İlişkin Yüzdeler
+
+Sonuçların elde edilmesinden önce, olumsuz ifade içeren maddeler olması durumu da göz önüne alınarak tüm maddelere aynı yanıtların verildiği cevaplar veri setinden çıkarılmıştır. Son durumda veri setinde 548 yanıt bulunmaktadır. Ankete verilen yanıtların ait olduğu bireyler bilinmemekte olup birden fazla yanıtın aynı birey tarafından verilmiş olması mümkündür. Bu sebeple ankete verilen toplam yanıtı sayısı, ankete katılan toplam birey sayısını doğrudan yansıtmamaktadır.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=3}
+library(plotly)
+library(dplyr)
+
+fig.1 <- anket.7 %>% 
+  group_by(Öğrencisi.olduğunuz.ana.bilim.dalını.seçiniz) %>% 
+  summarize(count = n()) %>% 
+  plot_ly(labels = ~Öğrencisi.olduğunuz.ana.bilim.dalını.seçiniz, 
+          values = ~count) %>% 
+  add_pie(hole = 0.6) %>% 
+  layout(title = "Yanıtların Ana Bilim Dalına Göre Yüzdeleri",  
+         showlegend = T,
+                      xaxis = list(showgrid = FALSE, zeroline = FALSE,
+                                   showticklabels = FALSE),
+                      yaxis = list(showgrid = FALSE, zeroline = FALSE,
+                                   showticklabels = FALSE))
+
+fig.1
+```
+
+Ankete verilen yanıtların ana bilim dallarına göre yüzdeleri incelendiğinde, gelen yanıtların en fazla %34.1 ile Eğitim Bilimleri Ana Bilim dalına ait olduğu; bunu sırasıyla Temel Eğitim Ana Bilim dalı (%20.8) ile Matematik ve Fen Bilimleri Eğitimi Ana Bilim dalının (%18.2) izlediği görülmektedir.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE,fig.width=11, fig.height=4}
+fig.2 <- anket.7 %>% 
+  group_by(Öğrenci.olarak.eğitim.gördüğünüz.programı.seçiniz) %>% 
+  summarize(count = n()) %>% 
+  plot_ly(labels = ~Öğrenci.olarak.eğitim.gördüğünüz.programı.seçiniz, 
+          values = ~count) %>% 
+  add_pie(hole = 0.6) %>% 
+  layout(title = "Yanıtların Programlara Göre Yüzdeleri",  
+         showlegend = T,
+                      xaxis = list(showgrid = FALSE, zeroline = FALSE,
+                                   showticklabels = FALSE),
+                      yaxis = list(showgrid = FALSE, zeroline = FALSE,
+                                   showticklabels = FALSE))
+
+fig.2
+```
+
+Ankete verilen yanıtların programlara göre yüzdeleri incelendiğinde ise gelen yanıtların en fazla %17.3 ile Eğitimde Ölçme ve Değerlendirme bilim dalına ait olduğu; bunu sırasıyla İngiliz Dili Eğitimi (%13) ile Okul Öncesi Eğitimi bilim dallarının (%12.2) izlediği görülmektedir.
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# fig.3 <- anket.7 %>% 
+#   group_by(Öğrenci.olarak.eğitim.gördüğünüz.düzeyi.seçiniz) %>% 
+#   summarize(count = n()) %>% 
+#   plot_ly(labels = ~Öğrenci.olarak.eğitim.gördüğünüz.düzeyi.seçiniz, 
+#           values = ~count) %>% 
+#   add_pie(hole = 0.6) %>% 
+#   layout(title = "Yanıtların Eğitim Düzeyine Göre Yüzdeleri",  
+#          showlegend = T,
+#                       xaxis = list(showgrid = FALSE, zeroline = FALSE,
+#                                    showticklabels = FALSE),
+#                       yaxis = list(showgrid = FALSE, zeroline = FALSE,
+#                                    showticklabels = FALSE))
+# 
+# fig.3
+```
+
+### Likert Maddeler
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#psych::describe(anket.7[,c(5:20)])
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(tidyverse)
+anket.8 <- anket.7[,c(5:20)] %>% 
+  # mutate_all(~dplyr::recode_factor(., `1`= "ÇokAz", `2`= "Biraz",
+  #                       `3`= "Orta", `4`= "Fazla", `5`= "ÇokFazla")) %>%
+  # mutate_if(is.numeric, as.factor) %>% 
+  as.data.frame() 
+
+anket.9 <- anket.8 %>% gather(key='Madde', value='Yanıt')
+anket.9$Yanıt <- factor(anket.9$Yanıt,
+    levels=1:5,
+    labels=c('Hiç Katılmıyorum','Katılmıyorum','Kararsızım',
+             'Katılıyorum','Kesinlikle Katılıyorum'))
+```
+
+
+Aşağıda sunulan Tablo 1, likert tipindeki madde kategorilerinin işaretlenme yüzdelerini içermektedir.  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+anket.10 <- anket.9 %>% 
+  mutate(Yanıt = as.character(Yanıt)) %>%
+  group_by(Madde, Yanıt) %>%
+  tally() %>%
+  mutate(n = round((n/sum(n)*100), 1)) %>%
+  pivot_wider(id_cols = Madde, 
+              names_from = Yanıt, 
+              values_from = n, 
+              values_fill = list(n = 0))
+
+anket.10 %>% 
+  relocate(Kararsızım, .after=Katılmıyorum) %>% 
+  rename(Hiç.Katılmıyorum = `Hiç Katılmıyorum`,
+              Kesinlikle.Katılıyorum = `Kesinlikle Katılıyorum`) %>% 
+  arrange(Hiç.Katılmıyorum) %>% 
+  knitr::kable(caption = "Tablo 1. Madde Kategorilerinin Seçilme Yüzdesi")
+```
+
+Tablo incelendiğinde, olumlu ifadelere sahip 13 maddede sıklıkla 'Kesinlikle Katılıyorum' (5 numaralı kategori) seçeneğinin işaretlendiği; olumsuz ifadelere sahip 3 maddede ise sıklıkla seçilen seçeneğin 'Hiç Katılmıyorum' (1 numaralı kategori) olduğu görülmektedir. Buna göre Eğitim Bilimleri Enstitüsünden bu ankete gönüllü olarak katılan öğrencilerin, derslere ilişkin olumlu görüşler belirttiği söylenebilir. Aşağıda madde kategorilerinin seçilme yüzdeleri grafik şeklinde sunulmuştur.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=6}
+ggplot(anket.9, aes(x=Madde)) +
+  geom_bar(aes(fill=Yanıt), position="fill") +
+  coord_flip() + 
+  scale_fill_brewer(palette='Spectral', direction=-1) +
+  scale_y_continuous(expand=expansion(0),
+                     labels=scales::percent_format()) +
+  labs(
+    title='Anket Maddelerinin Kategori Bazında Seçilme Yüzdesi', 
+    # subtitle='Likert Maddeler',
+    x='Maddeler', y='Yanıtlar'
+  ) +
+  theme_classic() +
+  theme(legend.position='top')
+```
+
+Tablo 1'dekine benzer bir sonuç grafikte de görülebilmektedir. Olumlu ifadelere sahip maddelerde 'kırmızı' ile gösterilen 'Kesinlikle Katılıyorum' kategorisi yoğunlukta iken olumsuz maddelerde ise 'mavi' ile gösterilen 'Hiç Katılmıyorum' kategorisinde yoğunluk görülmektedir. 
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=5}
+library(HH)
+HH::likert(Madde~., anket.10, 
+           positive.order=TRUE,
+           #as.percent = TRUE,
+           main="",
+           xlab="Yüzde",
+           ylab="Maddeler",
+           ylab.right="",
+           par.strip.text=list(cex=.3),
+           as.percent="noRightAxis",
+           colorFunction="sequential_hcl")
+
+```
+
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# mb <- reshape2::melt(anket.10)
+# 
+# g2 <- ggplot()+
+#   geom_bar(data = mb, 
+#            aes(x = reorder(Madde,value), 
+#                y=value, fill=variable), 
+#            position="stack", stat="identity")+
+#   coord_flip() + 
+#   ggtitle("")+
+#   ylab("Yüzde")+
+#   xlab("Maddeler")+
+#   scale_fill_brewer(palette="PRGn")+
+#   theme(legend.position="bottom")
+#   #scale_x_discrete(limits=c("StronglyAgree", "Agree", "DontKnow","Disagree","StronglyDisagree"))
+# g2
+```
+
+```{r eval=FALSE, include=FALSE}
+# anket.11 <- anket.8 %>% mutate_if(is.numeric, as.factor)  
+# library(likert)
+# plot(likert::likert(anket.11), legend.position="right")
+
+
+# anket.12 <- anket.10 %>% rename("Item" = Madde)
+# plot(likert(summary = anket.12), 
+#      plot.percent.neutral=FALSE, 
+#      legend.position="right")
+```
+
+
+=======
 ---
 title: "Eğitim Bilimleri Enstitüsü"
 subtitle: Öğrenci Profil Raporu
@@ -1740,3 +3484,4 @@ HH::likert(Madde~., anket.10,
 ```
 
 
+>>>>>>> e969c58d86e83a7ae76574d0a8dd1d02048b399c
